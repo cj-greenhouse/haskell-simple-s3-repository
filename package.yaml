@@ -1,0 +1,74 @@
+name:                hackage-simple
+version:             0.1.0.0
+github:              "cj-greenhouse/hackage-simple"
+license:             BSD3
+author:              "CJ Engineers"
+maintainer:          "Greg Wiley <aztec.rex@jammm.com>"
+copyright:           "2019 CJ Affiliate"
+
+extra-source-files:
+- README.md
+
+synopsis:            Utilties to maintain an S3-based package repository.
+category:            Utility
+
+description:         See <https://github.com/cj-greenhouse/hackage-simple#readme>
+
+dependencies:
+  - base >= 4.7 && < 5
+  - amazonka
+  - amazonka-s3
+  - tar
+
+library:
+  source-dirs: src
+
+ghc-options:
+  - -threaded
+  - -rtsopts
+  - -with-rtsopts=-N
+  - -Wall
+
+executables:
+  index-bucket:
+    main:                Main.hs
+    source-dirs:         app/index-bucket
+    dependencies:
+    - hackage-simple
+
+tests:
+  hackage-simple-test:
+    main:                Spec.hs
+    source-dirs:         test
+    dependencies:
+    - hackage-simple
+
+default-extensions:
+  - ConstraintKinds
+  - DataKinds
+  - DefaultSignatures
+  - DeriveAnyClass
+  - DeriveFunctor
+  - DeriveGeneric
+  - ExistentialQuantification
+  - FlexibleContexts
+  - FlexibleInstances
+  - FunctionalDependencies
+  - GADTs
+  - MonoLocalBinds
+  - GeneralizedNewtypeDeriving
+  - KindSignatures
+  - LambdaCase
+  - MultiParamTypeClasses
+  - NamedFieldPuns
+  - OverloadedStrings
+  - RankNTypes
+  - ScopedTypeVariables
+  - StandaloneDeriving
+  - TupleSections
+  - TypeApplications
+  - TypeOperators
+  - TypeFamilies
+  - InstanceSigs
+
+
