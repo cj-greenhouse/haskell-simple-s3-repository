@@ -1,0 +1,11 @@
+.stack-work/
+hackage-simple.cabal
+*~
+
+*.tar
+*.gz
+*.tgz
+*.zip
+*.bz2
+*deleteme*
+
