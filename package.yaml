@@ -17,22 +17,26 @@ description:         See <https://github.com/cj-greenhouse/hackage-simple#readme
 dependencies:
   - base >= 4.7 && < 5
   - amazonka
+  - amazonka-core
   - amazonka-s3
+  - bytestring
   - tar
+  - text
 
 library:
   source-dirs: src
 
 ghc-options:
-  - -threaded
-  - -rtsopts
-  - -with-rtsopts=-N
   - -Wall
 
 executables:
   index-bucket:
     main:                Main.hs
     source-dirs:         app/index-bucket
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
     dependencies:
     - hackage-simple
 
@@ -40,8 +44,14 @@ tests:
   hackage-simple-test:
     main:                Spec.hs
     source-dirs:         test
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
     dependencies:
     - hackage-simple
+    - tasty
+    - tasty-hunit
 
 default-extensions:
   - ConstraintKinds
@@ -70,5 +80,4 @@ default-extensions:
   - TypeOperators
   - TypeFamilies
   - InstanceSigs
-
 
