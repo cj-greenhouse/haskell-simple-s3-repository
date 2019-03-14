@@ -2,34 +2,53 @@ module Spec.GenerateIndex (tests) where
 
 import Spec.Prelude
 
+import Control.Monad.Trans.Writer
+import Data.Monoid (Sum (..))
 import Data.Text (Text)
+
 
 tests :: TestTree
 tests = testGroup "GenerateIndex" [
 
-    testGenerateIndex
+    testCase "flow" $ do
+
+        let
+            -- pkg1 = ("cool-lib", "0.1.1.0")
+            -- pkg2 = ("lame-lib", "3.0.0.2")
+            -- tars = (\(n, v) -> n ++ "-" ++ v) <$> [pkg1,pkg2]
+
+            actual = generate
+
+        captured actual === Sum 1
+
+
 
     ]
 
-testGenerateIndex :: TestTree
-testGenerateIndex = testCase "generateIndex" $ do
-    let name = "alib"
-        version = "0.1.0"
-        items = [Item name version]
+---------------------------------------------------------------
+-- Actual
 
-        actual = generateIndex items
-
-    actual === [Entry [name, version, mappend name ".cabal"]]
-
-
--------------------------------
+generate :: (Monad m, PackageStore m) => m ()
+generate = listPackages >> pure ()
 
 data Item = Item Text Text deriving (Show, Eq) -- let's use names and PVP ver
 data Entry = Entry [Text] deriving (Show, Eq, Ord)
 
+class PackageStore m where
+    listPackages :: m [Text]
 
-itemEntry :: Item -> Entry
-itemEntry (Item name version) = Entry [name, version, mappend name ".cabal"]
 
-generateIndex :: [Item] -> [Entry]
-generateIndex = fmap itemEntry
+
+----------------------------------------------------------------
+-- Test
+
+type Capture = Sum Integer
+type Test = Writer Capture
+
+captured :: Test a -> Capture
+captured = snd . runWriter
+
+instance PackageStore Test where
+    listPackages = tell (Sum 1) >> pure mempty
+
+
