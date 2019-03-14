@@ -5,14 +5,14 @@ import Spec.Prelude
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.Writer
-import Data.Set (Set, fromList)
+import Data.Set (Set, fromList, singleton)
 import Data.Text (Text)
 
 
 tests :: TestTree
 tests = testGroup "GenerateIndex" [
 
-    testCase "handles every package" $ do
+    testCase "fetches every package" $ do
 
         let
         -- given
@@ -24,19 +24,18 @@ tests = testGroup "GenerateIndex" [
         -- then
         captured packages actual === fromList packages
 
+
     ]
 
 ---------------------------------------------------------------
 -- Actual
 
 generate :: (Monad m, PackageStore m) => m ()
-generate = listPackages >> pure ()
-
-data Item = Item Text Text deriving (Show, Eq) -- let's use names and PVP ver
-data Entry = Entry [Text] deriving (Show, Eq, Ord)
+generate = listPackages >>= mapM_ fetchPackage
 
 class PackageStore m where
     listPackages :: m [Text]
+    fetchPackage :: Text -> m ()
 
 ----------------------------------------------------------------
 -- Test
@@ -49,4 +48,5 @@ captured :: Env -> Test a -> Capture
 captured env = snd . runWriter . flip runReaderT env
 
 instance PackageStore Test where
-    listPackages = ask >>= (lift . tell . fromList) >> pure mempty
+    listPackages =  ask
+    fetchPackage = lift . tell . singleton
