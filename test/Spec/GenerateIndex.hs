@@ -38,8 +38,6 @@ data Entry = Entry [Text] deriving (Show, Eq, Ord)
 class PackageStore m where
     listPackages :: m [Text]
 
-
-
 ----------------------------------------------------------------
 -- Test
 
@@ -52,5 +50,3 @@ captured env = snd . runWriter . flip runReaderT env
 
 instance PackageStore Test where
     listPackages = ask >>= (lift . tell . fromList) >> pure mempty
-
-
