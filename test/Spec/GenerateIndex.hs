@@ -2,26 +2,27 @@ module Spec.GenerateIndex (tests) where
 
 import Spec.Prelude
 
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Reader
 import Control.Monad.Trans.Writer
-import Data.Monoid (Sum (..))
+import Data.Set (Set, fromList)
 import Data.Text (Text)
 
 
 tests :: TestTree
 tests = testGroup "GenerateIndex" [
 
-    testCase "flow" $ do
+    testCase "handles every package" $ do
 
         let
-            -- pkg1 = ("cool-lib", "0.1.1.0")
-            -- pkg2 = ("lame-lib", "3.0.0.2")
-            -- tars = (\(n, v) -> n ++ "-" ++ v) <$> [pkg1,pkg2]
+        -- given
+            packages = ["foo", "bar"]
 
+        -- when
             actual = generate
 
-        captured actual === Sum 1
-
-
+        -- then
+        captured packages actual === fromList packages
 
     ]
 
@@ -42,13 +43,14 @@ class PackageStore m where
 ----------------------------------------------------------------
 -- Test
 
-type Capture = Sum Integer
-type Test = Writer Capture
+type Capture = Set Text
+type Env = [Text]
+type Test = ReaderT Env (Writer Capture)
 
-captured :: Test a -> Capture
-captured = snd . runWriter
+captured :: Env -> Test a -> Capture
+captured env = snd . runWriter . flip runReaderT env
 
 instance PackageStore Test where
-    listPackages = tell (Sum 1) >> pure mempty
+    listPackages = ask >>= (lift . tell . fromList) >> pure mempty
 
 
