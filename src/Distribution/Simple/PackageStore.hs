@@ -7,14 +7,14 @@ import Data.Set (Set)
 import Data.Text (Text, stripSuffix, unpack)
 import Distribution.Simple.Cabal (Cabal)
 
-data Package = Pkg {_cabal :: Cabal, _info :: PackageInfo} deriving (Eq, Show, Ord)
-data PackageInfo = PkgInfo {_name :: Text, _version :: Text} deriving (Eq, Show, Ord)
+data Package = Pkg {_cabal :: Cabal, _info :: PackageId} deriving (Eq, Show, Ord)
+-- data PackageInfo = PkgInfo {_name :: Text, _version :: Text} deriving (Eq, Show, Ord)
 type Index = Set Package
 
 
 class PackageStore m where
-    listPackages :: m [PackageInfo]
-    fetchPackage :: PackageInfo -> m Cabal
+    listPackages :: m [PackageId]
+    fetchPackage :: PackageId -> m Cabal
     storeIndex :: Index -> m ()
 
 class ObjectStore m where

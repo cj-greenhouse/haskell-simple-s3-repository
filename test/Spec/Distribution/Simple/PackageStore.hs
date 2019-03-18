@@ -13,7 +13,7 @@ import Distribution.Simple.PackageStore
 tests :: TestTree
 tests = testGroup "PackageStore" [
 
-    testCase "filter object names" $ do
+    testCase "filter and parse object names" $ do
         let
             n1 = "mylib"; v1 = "0.1.3.2"
             n2 = "other"; v2 = "3.2.1"

@@ -11,6 +11,9 @@ import Data.List (find)
 import Data.Set (fromList)
 
 import Distribution.Simple.PackageStore
+import Distribution.Types.PackageId (PackageIdentifier (..))
+import Distribution.Types.PackageName (mkPackageName)
+import Distribution.Types.Version (mkVersion)
 
 import Distribution.Simple.Index
 
@@ -23,8 +26,9 @@ tests = testGroup "Index" [
             let
             -- given
                 packages = [
-                    Pkg "config1" (PkgInfo "foo" "1.1.1"),
-                    Pkg "config2" (PkgInfo "bar" "0.1.1.3")]
+                    Pkg "config1" (PackageIdentifier (mkPackageName "foo") (mkVersion [12,1,3,4])),
+                    Pkg "config1" (PackageIdentifier (mkPackageName "bar") (mkVersion [0,1,3]))
+                    ]
 
             -- when
                 actual = generate
