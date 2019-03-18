@@ -10,6 +10,8 @@ import Control.Monad.Trans.Writer
 import Data.List (find)
 import Data.Set (fromList)
 
+import Distribution.Simple.PackageStore
+
 import Distribution.Simple.Index
 
 tests :: TestTree
