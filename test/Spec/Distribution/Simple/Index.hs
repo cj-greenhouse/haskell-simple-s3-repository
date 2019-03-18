@@ -1,4 +1,6 @@
-module Spec.GenerateIndex (tests) where
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
+module Spec.Distribution.Simple.Index (tests) where
 
 import Spec.Prelude
 
@@ -6,9 +8,9 @@ import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.Writer
 import Data.List (find)
-import Data.Set (Set, fromList)
-import Data.Text (Text)
+import Data.Set (fromList)
 
+import Distribution.Simple.Index
 
 tests :: TestTree
 tests = testGroup "GenerateIndex" [
@@ -34,23 +36,6 @@ tests = testGroup "GenerateIndex" [
 ---------------------------------------------------------------
 -- Actual
 
-type Cabal = Text
-data Package = Pkg {_cabal :: Cabal, _info :: PackageInfo} deriving (Eq, Show, Ord)
-data PackageInfo = PkgInfo {_name :: Text, _version :: Text} deriving (Eq, Show, Ord)
-type Index = Set Package
-
-
-generate :: (Monad m, PackageStore m) => m ()
-generate = do
-    infos <- listPackages
-    cabals <- mapM fetchPackage infos
-    let packages = zipWith Pkg cabals infos
-    storeIndex $ fromList packages
-
-class PackageStore m where
-    listPackages :: m [PackageInfo]
-    fetchPackage :: PackageInfo -> m Cabal
-    storeIndex :: Index -> m ()
 
 ----------------------------------------------------------------
 -- Test
