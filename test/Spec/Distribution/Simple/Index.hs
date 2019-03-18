@@ -15,7 +15,7 @@ import Distribution.Simple.PackageStore
 import Distribution.Simple.Index
 
 tests :: TestTree
-tests = testGroup "GenerateIndex" [
+tests = testGroup "Index" [
 
     testGroup ("flow") [
 
@@ -35,12 +35,6 @@ tests = testGroup "GenerateIndex" [
         ]
     ]
 
----------------------------------------------------------------
--- Actual
-
-
-----------------------------------------------------------------
--- Test
 
 type Capture = [Index]
 type Env = [Package]
