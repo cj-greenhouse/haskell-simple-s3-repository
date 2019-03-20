@@ -9,7 +9,7 @@ import Codec.Archive.Tar (write)
 import Codec.Archive.Tar.Entry (fromTarPath, toTarPath, fileEntry, directoryEntry)
 import Codec.Compression.GZip (compress)
 import Data.ByteString.Lazy (ByteString, fromStrict)
-import Data.Map (fromList, Map)
+import Data.Map (fromList, Map, (!))
 import Data.Text (Text, unpack, pack)
 import Data.Text.Encoding (encodeUtf8)
 import Distribution.Pretty (prettyShow)
@@ -61,7 +61,7 @@ tests = testGroup "PackageStore" [
                 actual = fetchPackageUsingObjectStore p
 
             -- then
-                fetch = fromList [(pidt p, obj)]
+                fetch = fromList [(pidt p <> ".tar.gz", obj)]
             value (mempty, fetch) actual === c
         ]
 
@@ -71,11 +71,11 @@ tests = testGroup "PackageStore" [
 
 -- create a tarball containing the cabal file using the correct name
 mkPackageTarball :: PackageId -> Cabal -> ByteString
-mkPackageTarball pkgId cabal =
+mkPackageTarball pkgId spec =
     let bpath = either undefined id $ toTarPath True $ prettyShow pkgId
         dentry = directoryEntry bpath
         cpath = either undefined id $ toTarPath False (fromTarPath bpath ++ (unPackageName $ pkgName pkgId) ++ ".cabal")
-        centry = fileEntry cpath (fromStrict $ encodeUtf8 cabal)
+        centry = fileEntry cpath (fromStrict $ encodeUtf8 spec)
     in compress $ write [dentry, centry]
 
 pid :: Text -> [Int] -> PackageId
@@ -92,4 +92,7 @@ value = flip runReader
 
 instance ObjectStore Test where
     listObjectNames = fst <$> ask
+    fetchObject key = do
+        cfg <- snd <$> ask
+        pure $ cfg ! key
 
