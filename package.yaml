@@ -25,6 +25,7 @@ dependencies:
   - tar
   - text
   - transformers
+  - zlib
 
 library:
   source-dirs: src

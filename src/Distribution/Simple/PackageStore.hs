@@ -30,3 +30,6 @@ listPackagesUsingObjectStore :: (Monad m, ObjectStore m) => m [PackageId]
 listPackagesUsingObjectStore = do
     names <- listObjectNames
     pure $ fmap (maybe undefined id) $ filter isJust $ fmap parseName  names
+
+fetchPackageUsingObjectStore :: (Monad m, ObjectStore m) => PackageId ->  m Cabal
+fetchPackageUsingObjectStore = undefined
