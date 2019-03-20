@@ -30,16 +30,13 @@ class ObjectStore m where
     fetchObject :: Text -> m ByteString
 
 parseName :: Text -> Maybe PackageId
-parseName n = do
+parseName n =
     if n == "index.tar.gz"
         then Nothing
         else stripSuffix ".tar.gz" n >>= simpleParse . unpack
 
 listPackagesUsingObjectStore :: (Monad m, ObjectStore m) => m [PackageId]
-listPackagesUsingObjectStore = do
-    names <- listObjectNames
-    pure $ fmap (maybe undefined id) $ filter isJust $ fmap parseName  names
-
+listPackagesUsingObjectStore = fmap (maybe undefined id) . filter isJust . fmap parseName <$> listObjectNames
 
 unEntries :: Entries err -> Maybe [Entry]
 unEntries entries = either (const Nothing) Just $ foldlEntries (\es e -> e : es) mempty entries
