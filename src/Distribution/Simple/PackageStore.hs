@@ -28,6 +28,7 @@ class PackageStore m where
 class ObjectStore m where
     listObjectNames :: m [Text]
     fetchObject :: Text -> m ByteString
+    storeObject :: Text -> ByteString -> m ()
 
 parseName :: Text -> Maybe PackageId
 parseName n =
@@ -48,7 +49,7 @@ isCabal pkgId entry =
 
 cabal :: Entry -> Cabal
 cabal entry = case entryContent entry of
-    NormalFile blob _ -> decodeUtf8 . toStrict $ blob
+    NormalFile blob _ -> (decodeUtf8 . toStrict) blob
     _ -> undefined
 
 fetchPackageUsingObjectStore :: (Monad m, ObjectStore m) => PackageId ->  m Cabal
@@ -60,4 +61,5 @@ fetchPackageUsingObjectStore pkgId = do
         maybeCabal = fmap cabal (unEntries entries >>= find (isCabal pkgId))
     maybe undefined pure maybeCabal
 
-
+storeIndexUsingObjectStore :: (Monad m, ObjectStore m) => Index -> m ()
+storeIndexUsingObjectStore = const $ pure ()
