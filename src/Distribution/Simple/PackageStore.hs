@@ -7,10 +7,11 @@ import Data.List (find)
 import Data.Set (toList)
 import Distribution.Pretty (prettyShow)
 import Distribution.Simple.Cabal (Cabal)
+import Distribution.Simple.ObjectStore (ObjectStore (..))
 import Distribution.Text as C (simpleParse)
 import Distribution.Types.PackageId (PackageId, pkgName)
 import Distribution.Types.PackageName (unPackageName)
-import Data.ByteString.Lazy (ByteString, toStrict, fromStrict)
+import Data.ByteString.Lazy (toStrict, fromStrict)
 import Data.Maybe (isJust)
 import Data.Set (Set)
 import Data.Text (Text, stripSuffix, unpack, pack)
@@ -25,11 +26,6 @@ class PackageStore m where
     listPackages :: m [PackageId]
     fetchPackage :: PackageId -> m Cabal
     storeIndex :: Index -> m ()
-
-class ObjectStore m where
-    listObjectNames :: m [Text]
-    fetchObject :: Text -> m ByteString
-    storeObject :: Text -> ByteString -> m ()
 
 parseName :: Text -> Maybe PackageId
 parseName n =
@@ -58,7 +54,6 @@ fetchPackageUsingObjectStore pkgId = do
         textContent entry = case entryContent entry of
             NormalFile blob _ -> (decodeUtf8 . toStrict) blob
             _ -> undefined
-
 
 storeIndexUsingObjectStore :: (Monad m, ObjectStore m) => Index -> m ()
 storeIndexUsingObjectStore index = do
