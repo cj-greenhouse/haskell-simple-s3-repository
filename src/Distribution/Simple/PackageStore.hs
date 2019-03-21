@@ -43,24 +43,22 @@ listPackagesUsingObjectStore = fmap (maybe undefined id) . filter isJust . fmap 
 unEntries :: Entries err -> Maybe [Entry]
 unEntries entries = either (const Nothing) Just $ foldlEntries (\es e -> e : es) mempty entries
 
-isCabal :: PackageId -> Entry -> Bool
-isCabal pkgId entry =
-    let want = prettyShow pkgId ++ "/" ++ (unPackageName . pkgName) pkgId ++ ".cabal"
-    in (fromTarPath . entryTarPath) entry == want
-
-cabal :: Entry -> Cabal
-cabal entry = case entryContent entry of
-    NormalFile blob _ -> (decodeUtf8 . toStrict) blob
-    _ -> undefined
-
 fetchPackageUsingObjectStore :: (Monad m, ObjectStore m) => PackageId ->  m Cabal
 fetchPackageUsingObjectStore pkgId = do
     let
         key = (pack $ prettyShow pkgId) <> ".tar.gz"
     tarball <- fetchObject key
     let entries = (TAR.read . decompress) tarball
-        maybeCabal = fmap cabal (unEntries entries >>= find (isCabal pkgId))
+        maybeCabal = fmap textContent (unEntries entries >>= find isCabal)
     maybe undefined pure maybeCabal
+    where
+        isCabal entry =
+            let want = prettyShow pkgId ++ "/" ++ (unPackageName . pkgName) pkgId ++ ".cabal"
+            in (fromTarPath . entryTarPath) entry == want
+        textContent entry = case entryContent entry of
+            NormalFile blob _ -> (decodeUtf8 . toStrict) blob
+            _ -> undefined
+
 
 storeIndexUsingObjectStore :: (Monad m, ObjectStore m) => Index -> m ()
 storeIndexUsingObjectStore index = do
