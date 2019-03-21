@@ -8,11 +8,11 @@ import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.Writer
 import Codec.Archive.Tar (write)
-import Codec.Archive.Tar.Entry (fromTarPath, toTarPath, fileEntry, directoryEntry)
+import Codec.Archive.Tar.Entry (Entry, fromTarPath, toTarPath, fileEntry, directoryEntry)
 import Codec.Compression.GZip (compress)
 import Data.ByteString.Lazy (ByteString, fromStrict)
 import Data.Map as Map (fromList, Map, (!))
-import Data.Set as Set (fromList)
+import Data.Set as Set (fromList, toList)
 import Data.Text (Text, unpack, pack)
 import Data.Text.Encoding (encodeUtf8)
 import Distribution.Pretty (prettyShow)
@@ -81,11 +81,22 @@ tests = testGroup "PackageStore" [
 
             -- when
                 actual = storeIndexUsingObjectStore index
+
             -- then
-            captured (mempty, mempty) actual === [("","")]
+            captured (mempty, mempty) actual === [("index.tar.gz",mkIndexTarball index)]
 
     ]
 
+indexEntry :: Package -> Entry
+indexEntry pkg =
+    let name = (unPackageName . pkgName . _info) pkg
+        version = prettyShow $ _info pkg
+        path = either undefined id $ toTarPath False $ name <> "/" <> version <> "/" <> name <> ".cabal"
+    in fileEntry path ((fromStrict . encodeUtf8 . _cabal) pkg)
+
+
+mkIndexTarball :: Index -> ByteString
+mkIndexTarball index = compress $ write . fmap indexEntry . toList $ index
 
 -- create a tarball containing the cabal file using the correct name
 mkPackageTarball :: PackageId -> Cabal -> ByteString

@@ -1,19 +1,20 @@
 module Distribution.Simple.PackageStore where
 
-import Codec.Archive.Tar as TAR (Entries, read, foldlEntries)
-import Codec.Archive.Tar.Entry as TAR (Entry (..), fromTarPath, EntryContent (..))
-import Codec.Compression.GZip (decompress)
+import Codec.Archive.Tar as TAR (Entries, read, foldlEntries, write)
+import Codec.Archive.Tar.Entry as TAR (Entry (..), fromTarPath, toTarPath, EntryContent (..), fileEntry)
+import Codec.Compression.GZip (decompress, compress)
 import Data.List (find)
+import Data.Set (toList)
 import Distribution.Pretty (prettyShow)
 import Distribution.Simple.Cabal (Cabal)
 import Distribution.Text as C (simpleParse)
 import Distribution.Types.PackageId (PackageId, pkgName)
 import Distribution.Types.PackageName (unPackageName)
-import Data.ByteString.Lazy (ByteString, toStrict)
+import Data.ByteString.Lazy (ByteString, toStrict, fromStrict)
 import Data.Maybe (isJust)
 import Data.Set (Set)
 import Data.Text (Text, stripSuffix, unpack, pack)
-import Data.Text.Encoding (decodeUtf8)
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 
 data Package = Pkg {_cabal :: Cabal, _info :: PackageId} deriving (Eq, Show, Ord)
 -- data PackageInfo = PkgInfo {_name :: Text, _version :: Text} deriving (Eq, Show, Ord)
@@ -62,4 +63,15 @@ fetchPackageUsingObjectStore pkgId = do
     maybe undefined pure maybeCabal
 
 storeIndexUsingObjectStore :: (Monad m, ObjectStore m) => Index -> m ()
-storeIndexUsingObjectStore = const $ pure ()
+storeIndexUsingObjectStore index = do
+    storeObject "index.tar.gz" tarball
+    where
+        tarball = compress . write . fmap entry . toList $ index
+        entry :: Package -> Entry
+        entry pkg = fileEntry path spec
+            where
+                path = either undefined id $ toTarPath False $ name <> "/" <> version <> "/" <> name <> ".cabal"
+                name = unPackageName . pkgName . _info $ pkg
+                version = prettyShow . _info $ pkg
+                spec = fromStrict . encodeUtf8 . _cabal $ pkg
+
