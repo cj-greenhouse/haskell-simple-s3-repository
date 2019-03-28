@@ -22,8 +22,10 @@ dependencies:
   - bytestring
   - Cabal
   - containers
+  - lens
   - tar
   - text
+  - time
   - transformers
   - zlib
 
