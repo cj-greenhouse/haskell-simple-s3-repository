@@ -122,7 +122,7 @@ listObjectNamesUsingS3 repo = do
 
 -- this function requires extraction configuration because the Amazonka
 -- get object response contains an IO-coupled conduit and we can't perform
--- pure testing with it
+-- pure testing with it AFAICT (research this)
 fetchObjectUsingS3 :: (Monad m, AWS GetObject m) => (GetObjectResponse -> m ByteString) -> Text -> Text -> m ByteString
 fetchObjectUsingS3 extract repo key = do
     resp <- aws $ getObject (BucketName repo) (ObjectKey key)
