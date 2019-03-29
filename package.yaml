@@ -20,6 +20,7 @@ dependencies:
   - amazonka-core
   - amazonka-s3
   - bytestring
+  - conduit
   - Cabal
   - containers
   - lens

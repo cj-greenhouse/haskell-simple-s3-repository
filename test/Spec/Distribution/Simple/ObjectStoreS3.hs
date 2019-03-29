@@ -2,12 +2,15 @@ module Spec.Distribution.Simple.ObjectStoreS3 (tests) where
 
 import Spec.Prelude
 
+import Conduit
 import Control.Lens
 import Control.Monad.Trans.Reader
-import  Data.List (sort)
+import Data.ByteString (ByteString)
+import Data.List (sort)
 import Data.Text (Text)
 import Data.Time
 import Network.AWS (AWSRequest (..))
+import Network.AWS.Data.Body (RsBody (..))
 import Network.AWS.S3
 import Network.AWS.Pager (page)
 
@@ -27,7 +30,7 @@ tests = testGroup "ObjectStoreS3" [
             actual = listObjectNamesUsingS3 repo
 
         -- then
-        value [(req, resp)] actual === [k1,k2]
+        value ([(req, resp)], mempty) actual === [k1,k2]
     ,
     testCase "big listing" $ do
         let
@@ -60,20 +63,41 @@ tests = testGroup "ObjectStoreS3" [
             actual = listObjectNamesUsingS3 repo
 
         -- then
-        sort (value [(req1, resp1),(req2, resp2),(req3, resp3)] actual) === sort (ns)
+        sort (value ([(req1, resp1),(req2, resp2),(req3, resp3)], mempty) actual) === sort (ns)
+    ,
+    testCase "fetch object" $ do
+        let
+        -- given
+            key = "okey"
+            repo = "repo99"
+            obj = "blob"
+            etag = Just $ ETag "blobhash"
+            req = getObject (BucketName repo) (ObjectKey key)
+            resp = getObjectResponse 200 (RsBody $ yieldMany []) & gorsETag .~ etag
+            extract rs = pure $ if (rs ^. gorsETag == etag)
+                            then obj
+                            else "NOT OBJECT"
+
+        -- when
+            actual = fetchObjectUsingS3 extract repo key
+
+        -- then
+        value (mempty, [(req,resp)]) actual === obj
 
 
     ]
 
-
-type Env = [(ListObjectsV2, ListObjectsV2Response)]
+type Env = ([(ListObjectsV2, ListObjectsV2Response)], [(GetObject, GetObjectResponse)])
 type Test = Reader Env
 
 value :: Env -> Test a -> a
 value = flip runReader
 
 instance AWS ListObjectsV2 Test where
-    aws r = maybe undefined id . lookup r <$> ask
+    aws r = maybe undefined id . lookup r . fst <$> ask
+
+instance AWS GetObject Test where
+    aws r = maybe undefined id . lookup r . snd <$> ask
 
 -------------------------------------------------------------------
 --- actual
@@ -96,3 +120,10 @@ listObjectNamesUsingS3 repo = do
                 Nothing -> pure nrac
                 Just next -> accum nrac next
 
+-- this function requires extraction configuration because the Amazonka
+-- get object response contains an IO-coupled conduit and we can't perform
+-- pure testing with it
+fetchObjectUsingS3 :: (Monad m, AWS GetObject m) => (GetObjectResponse -> m ByteString) -> Text -> Text -> m ByteString
+fetchObjectUsingS3 extract repo key = do
+    resp <- aws $ getObject (BucketName repo) (ObjectKey key)
+    extract resp
