@@ -9,8 +9,9 @@ import Data.ByteString (ByteString)
 import Data.List (sort)
 import Data.Text (Text)
 import Data.Time
+import Effect.AWS
 import Network.AWS (AWSRequest (..))
-import Network.AWS.Data.Body (RsBody (..))
+import Network.AWS.Data.Body (RsBody (..), RqBody (..), ChunkedBody (..), HashedBody (..))
 import Network.AWS.S3
 import Network.AWS.Pager (page)
 
@@ -83,29 +84,62 @@ tests = testGroup "ObjectStoreS3" [
 
         -- then
         value (mempty, [(req,resp)]) actual === obj
+    -- ,
+    -- testCase "store object" $ do
+    --     let
+    --     -- given
+    --         key = "pkey"
+    --         repo = "r7"
+    --         obj = "superball"
 
+    --     -- when
+    --         actual = storeObjectUsingS3 repo key obj
+
+    --     -- then
+    --     captured mempty actual ^. poBucket === BucketName repo
+    --     captured mempty actual ^. poKey === ObjectKey key
+    --     bytes (captured mempty actual ^. poBody) === obj
 
     ]
 
 type Env = ([(ListObjectsV2, ListObjectsV2Response)], [(GetObject, GetObjectResponse)])
+type Capture = PutObject
 type Test = Reader Env
 
 value :: Env -> Test a -> a
 value = flip runReader
 
-instance AWS ListObjectsV2 Test where
-    aws r = maybe undefined id . lookup r . fst <$> ask
+captured :: Env -> Test a -> Capture
+captured = undefined
 
-instance AWS GetObject Test where
-    aws r = maybe undefined id . lookup r . snd <$> ask
+instance AWSOp ListObjectsV2 Test where
+    withAWS r = maybe undefined id . lookup r . fst <$> ask
+
+instance AWSOp GetObject Test where
+    withAWS r = maybe undefined id . lookup r . snd <$> ask
+
 
 -------------------------------------------------------------------
 --- actual
 
-class AWS r m where
-    aws :: r -> m (Rs r)
 
-listObjectNamesUsingS3 :: (Monad m, AWS ListObjectsV2 m) => Text -> m [Text]
+-- this type-fu should not b exposed to the outside world
+
+-- class WithAWSRequest a where
+--     type ARQ a = (rq :: *) | rq -> a
+--     type ARQ a = a
+
+-- class WithAWSResponse a where
+--     type ARR a = (rs :: *) | rs -> a
+--     type ARR a = a
+
+
+
+
+
+
+
+listObjectNamesUsingS3 :: (Monad m, AWSOp ListObjectsV2 m) => Text -> m [Text]
 listObjectNamesUsingS3 repo = do
     rss <- accum [] (listObjectsV2 (BucketName repo))
     let os = concat $ view lovrsContents <$> rss
@@ -114,7 +148,7 @@ listObjectNamesUsingS3 repo = do
     where
         -- let's refactor this to paginate (Conduit)
         accum rac rq = do
-            rs <- aws rq
+            rs <- withAWS rq
             let nrac = (rs:rac)
             case page rq rs of
                 Nothing -> pure nrac
@@ -123,7 +157,11 @@ listObjectNamesUsingS3 repo = do
 -- this function requires extraction configuration because the Amazonka
 -- get object response contains an IO-coupled conduit and we can't perform
 -- pure testing with it AFAICT (research this)
-fetchObjectUsingS3 :: (Monad m, AWS GetObject m) => (GetObjectResponse -> m ByteString) -> Text -> Text -> m ByteString
-fetchObjectUsingS3 extract repo key = do
-    resp <- aws $ getObject (BucketName repo) (ObjectKey key)
-    extract resp
+fetchObjectUsingS3 :: (Monad m, AWSOp GetObject m) => (GetObjectResponse -> m ByteString) -> Text -> Text -> m ByteString
+fetchObjectUsingS3 extract repo key = undefined
+-- do
+--     resp <- withAWS $ getObject (BucketName repo) (ObjectKey key)
+--     extract resp
+
+storeObjectUsingS3 :: (Monad m) => Text -> Text -> ByteString -> m ()
+storeObjectUsingS3 = undefined
